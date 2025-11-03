@@ -1,0 +1,70 @@
+paths:
+  seurat_rds: "2_DataProcessing/RDS/nk.integrated.v4.rds"
+  out_root: "3_Analysis/2_DifferetialAnalysis"
+
+# ------------------------------------------------------------
+# 列映射：按时间点进行比较，无条件列；簇分析按 Seurat 的 seurat_clusters 分层
+# ------------------------------------------------------------
+columns:
+  sample_id: "timepoint"          # 用时间点作为样本ID做伪样本聚合
+  cluster: "seurat_clusters"      # 新增：用于簇分析的列（不使用 singleR.label 做分层）
+  timepoint: "timepoint"          # 时间点列，亦用于分组标签构造
+  # condition:                     # 无条件列时可留空
+  # group:                         # 若对象中已有组合分组列可在此指定；缺失时按 group_label_format 自动生成
+
+# 当没有条件列时，仅用 timepoint 构造分组标签，如 0W / 1W / 2W / 6W
+group_label_format: "{timepoint}"
+
+# ------------------------------------------------------------
+# DEG 配置：支持整体/簇分析两种模式（或同时执行）
+# ------------------------------------------------------------
+deg:
+  method: "DESeq2"
+  scope: "both"                  # overall：仅整体；by_cluster：仅簇；both：两者都做
+  lfc_threshold: 0.25
+  p_adj_cutoff: 0.05
+  pseudobulk:
+    aggregation: "sum"
+    min_cells_per_cluster: 50     # 仅用于簇分析的最小细胞数阈值
+    replicates_per_group: 3       # 每个时间点拆分的伪重复数（满足DESeq2复现需求）
+  filter_expr:
+    type: "counts"
+    min_count: 10
+    min_samples: 2
+  shrinkage:
+    enabled: true
+    type: "apeglm"               # 可选：ashr
+
+# ------------------------------------------------------------
+# 时间点驱动的比较（标签需与 meta$timepoint 一致）
+# ------------------------------------------------------------
+comparisons:
+  - id: "0W_NCD_vs_1W_MCD"
+    control: "0W_NCD"
+    case: "1W_MCD"
+  - id: "0W_NCD_vs_2W_MCD"
+    control: "0W_NCD"
+    case: "2W_MCD"
+  - id: "0W_NCD_vs_6W_MCD"
+    control: "0W_NCD"
+    case: "6W_MCD"
+
+# ------------------------------------------------------------
+# 可视化配置：火山图/MA/热图与富集
+# ------------------------------------------------------------
+viz:
+  volcano:
+    top_labels: 10
+    label_by: "padj"     # 或 "pvalue"
+  ma:
+    use_shrunk_lfc: true
+  heatmap:
+    top_n: 30
+    scale: "row"         # row / none
+  enrichment:
+    enabled: true
+    databases: ["HALLMARK"]
+    species: "Mus musculus"
+    min_size: 10
+    max_size: 500
+    rank_metric: "stat"

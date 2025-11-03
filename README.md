@@ -174,14 +174,37 @@ scRNA-seq/
  - 调参报告：`2_DataProcessing/3_UMAP-Tuning/data/nk_noCluster6_tuning_metrics.csv`
  - 最终图件：`2_DataProcessing/3_UMAP-Tuning/plots/UMAP_noCluster6_final_byTimepoint.png`
 
+## 簇重命名和隐藏策略
+
+### 背景
+在聚类分析中发现簇5表达了典型的B细胞基因（Iglc3、Cd79a、Iglc2、Ebf1、Ms4a1等），表明存在B细胞污染。为了提高分析的生物学准确性，采用了簇重命名和隐藏策略。
+
+### 重命名映射
+| 原始簇 | 生物学特征 | 重命名后 | 可视化状态 |
+|--------|------------|----------|------------|
+| 簇0-4 | NK细胞亚群 | 保持不变 | 可见 |
+| 簇5 | B细胞污染 | 簇6 | 隐藏 |
+| 簇6 | 增殖NK细胞 | 簇5 | 可见 |
+
+### 关键文件
+- **重命名后RDS**：`2_DataProcessing/RDS/nk.integrated.singleR_annotated.noCluster6.tuned.renamed.rds`
+- **更新数据**：`3_Analysis/1.ClusterAnalysis/data/*`（已更新簇编号）
+- **隐藏簇图件**：`3_Analysis/1.ClusterAnalysis/plots/*_hidden_cluster6.(png|pdf)`
+- **完整报告**：`2_DataProcessing/reports/cluster_renaming_final_report.md`
+
+### 使用建议
+- **主要分析**：使用重命名后的数据（推荐隐藏簇6）
+- **对比验证**：原始数据保存在`2_DataProcessing/reports/backup/`
+- **发表图件**：使用`*_hidden_cluster6`系列图件
+
 ## 使用说明（下游分析 3_Analysis）
 
-前置输入：`2_DataProcessing/RDS/nk.integrated.singleR_annotated.noCluster6.tuned.rds`（含 `timepoint`、`seurat_clusters` 等元数据字段）
+前置输入：`2_DataProcessing/RDS/nk.integrated.singleR_annotated.noCluster6.tuned.renamed.rds`（含 `timepoint`、`seurat_clusters` 等元数据字段，已应用簇重命名策略）
 
 A) 按时间点×簇导出比例并绘图
 ```bash
 Rscript 3_Analysis/Scripts/export_cluster_proportions.R \
-  --rds 2_DataProcessing/RDS/nk.integrated.singleR_annotated.noCluster6.tuned.rds \
+  --rds 2_DataProcessing/RDS/nk.integrated.singleR_annotated.noCluster6.tuned.renamed.rds \
   --outdir 3_Analysis/1.ClusterAnalysis \
   --timepoint-order "0W_NCD,1W_MCD,2W_MCD,6W_MCD" \
   --topk 12 --formats "png,pdf" --width 9 --height 6 --dpi 300
@@ -201,8 +224,8 @@ B) 每簇差异基因（两种方式二选一）
 - 推荐（参数化 CLI 版，含 assay 回退）：  
   ```bash
   Rscript 3_Analysis/Scripts/find_cluster_markers.R \
-    --rds 2_DataProcessing/RDS/nk.integrated.singleR_annotated.noCluster6.tuned.rds \
-    --outdir 3_Analysis/1.ClusterAnalysis \
+      --rds 2_DataProcessing/RDS/nk.integrated.singleR_annotated.noCluster6.tuned.renamed.rds \
+      --outdir 3_Analysis/1.ClusterAnalysis \
     --assay-priority "integrated,SCT,RNA" \
     --cluster-col seurat_clusters \
     --only-pos TRUE --min-pct 0.1 --logfc-threshold 0.25 --test-use "wilcox" --topn 10
@@ -218,6 +241,90 @@ B) 每簇差异基因（两种方式二选一）
 - 说明：
   - 会优先使用 integrated→SCT→RNA；若 RNA 被选且 data/VariableFeatures 为空，会自动执行 Normalize/FindVariableFeatures/Scale；
   - 如有性能需求，可安装 presto 包（Seurat 将自动切换更快的 Wilcoxon 实现）。
+
+## 时间点驱动的差异分析（整体 + 按簇）
+
+### 概览
+- 不依赖 orig.ident 或 condition；以 `meta.data$timepoint` 作为唯一处理条件，比较组由 `comparisons` 指定（示例：`0W_NCD_vs_1W_MCD`、`0W_NCD_vs_2W_MCD`、`0W_NCD_vs_6W_MCD`）。
+- 整体分析（overall）：在选定比较下合并所有细胞，按 `timepoint` 做伪样本聚合并进行 DESeq2 差异分析，输出前缀 `all_cells.*`。
+- 按簇分析（by_cluster）：按 `meta.data$seurat_clusters` 分层，每个簇内再按 `timepoint` 做伪样本聚合并进行 DESeq2 差异分析，输出前缀 `<cluster>.*`。
+- 伪重复（pseudoreplicates）：由于每组只有一个时间点，启用 `replicates_per_group=3` 将每个时间点的细胞拆分为 K=3 个子集（伪样本），以满足 DESeq2 对离散度估计的需求（可在配置中调整或关闭）。
+- 物种与富集：`viz.enrichment.species` 使用 `Mus musculus`（小鼠），数据库映射 HALLMARK→`H`，FGSEA 以 `ranked_genes.csv` 的 `stat` 作为评分。
+
+### 配置关键项（3_Analysis/2_DifferetialAnalysis/scripts/config.yaml）
+```
+columns:
+  sample_id: "timepoint"
+  cluster: "seurat_clusters"
+  timepoint: "timepoint"
+
+group_label_format: "{timepoint}"
+
+deg:
+  method: "DESeq2"
+  scope: "both"                    # overall + by_cluster
+  lfc_threshold: 0.25
+  p_adj_cutoff: 0.05
+  pseudobulk:
+    aggregation: "sum"
+    min_cells_per_cluster: 50
+    replicates_per_group: 3        # 伪重复K（可调）
+  filter_expr:
+    type: "counts"
+    min_count: 10
+    min_samples: 2
+  shrinkage:
+    enabled: true
+    type: "apeglm"
+
+comparisons:
+  - id: "0W_NCD_vs_1W_MCD"
+    control: "0W_NCD"
+    case: "1W_MCD"
+  - id: "0W_NCD_vs_2W_MCD"
+    control: "0W_NCD"
+    case: "2W_MCD"
+  - id: "0W_NCD_vs_6W_MCD"
+    control: "0W_NCD"
+    case: "6W_MCD"
+
+viz:
+  enrichment:
+    enabled: true
+    databases: ["HALLMARK"]        # 映射为类别 "H"
+    species: "Mus musculus"        # 小鼠
+    min_size: 10
+    max_size: 500
+    rank_metric: "stat"
+```
+
+### 运行命令
+```bash
+# 差异分析（整体 + 按簇）
+Rscript 3_Analysis/2_DifferetialAnalysis/scripts/1_run_deg_analysis.R \
+  --config 3_Analysis/2_DifferetialAnalysis/scripts/config.yaml
+
+# 可视化与富集（火山/MA/热图/FGSEA）
+Rscript 3_Analysis/2_DifferetialAnalysis/scripts/viz/2_run_viz.R \
+  --config 3_Analysis/2_DifferetialAnalysis/scripts/config.yaml
+```
+
+### 输出结构示例
+- 差异表达结果表：`results/tables/<cmp_id>/`
+  - `all_cells.DESeq2.results.csv`、`<cluster>.DESeq2.results.csv`
+- 标准化计数与排名基因：`results/data/<cmp_id>/`
+  - `all_cells.normalized_counts.csv`、`all_cells.ranked_genes.csv` 等
+- 图形：`results/plots/<type>/<cmp_id>/`（`type = volcano|ma|heatmap|enrichment`）
+  - 例：`results/plots/volcano/0W_NCD_vs_1W_MCD/0.volcano.png`
+- 富集：`results/enrichment/<cmp_id>/` 与 `results/plots/enrichment/<cmp_id>/`
+  - 例：`0.fgsea.results.csv`、`0.fgsea.hallmark.png`
+
+### 调参建议
+- 显著性阈值：`deg.lfc_threshold`（默认 0.25）、`deg.p_adj_cutoff`（默认 0.05）。
+- 表达过滤：`deg.filter_expr.min_count/min_samples`（控制低表达基因过滤强度）。
+- 伪重复：`deg.pseudobulk.replicates_per_group`（默认 3；若某簇细胞较少，可降至 2）。
+- 簇最小细胞数：`deg.pseudobulk.min_cells_per_cluster=50`（不足则跳过并记录到 `data/cell_counts_threshold_failures.tsv`）。
+- 物种与数据库：`viz.enrichment.species` 与 `viz.enrichment.databases`（已映射 HALLMARK→`H`）。
 
 ## 故障排查（FAQ）
 
@@ -323,6 +430,22 @@ B) 每簇差异基因（两种方式二选一）
     - `3_Analysis/1.ClusterAnalysis/data/markers_top10_per_cluster.csv`
     - `3_Analysis/1.ClusterAnalysis/plots/cluster_proportion_lineplot.(png|pdf)`
   - 核心对象：`2_DataProcessing/RDS/nk.integrated.singleR_annotated.noCluster6.tuned.rds`
+
+- 2025-10-23（簇重命名和隐藏策略）
+  - 新增脚本：`2_DataProcessing/Scripts/rename_and_hide_clusters.R`（簇重命名和RDS对象更新）
+  - 新增脚本：`2_DataProcessing/Scripts/correct_cluster_renaming.R`（分析文件重命名校正）
+  - 新增脚本：`2_DataProcessing/Scripts/visualize_with_hidden_clusters.R`（隐藏簇6的可视化）
+  - 重命名策略：
+    - 原簇5（B细胞污染：Iglc3、Cd79a等）→ 簇6（在可视化中隐藏）
+    - 原簇6（增殖：H2afx、Mki67等）→ 簇5（可见）
+  - 更新文件：
+    - `2_DataProcessing/RDS/nk.integrated.singleR_annotated.noCluster6.tuned.renamed.rds`
+    - `3_Analysis/1.ClusterAnalysis/data/*`（所有标记基因和比例文件）
+    - `3_Analysis/1.ClusterAnalysis/plots/*_hidden_cluster6.(png|pdf)`（隐藏簇6的图件）
+  - 报告文档：
+    - `2_DataProcessing/reports/cluster_renaming_final_report.md`（完整执行报告）
+    - `2_DataProcessing/reports/visualization_report_hidden_cluster6.md`（可视化报告）
+  - 质量控制：所有原始文件完整备份至`2_DataProcessing/reports/backup/`
 
 ## 📋 后续分析规划
 
