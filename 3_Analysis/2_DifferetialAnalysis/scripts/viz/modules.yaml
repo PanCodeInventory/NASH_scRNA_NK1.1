@@ -1,0 +1,85 @@
+# Module configuration for NASH NK visualization
+modules:
+  immune_command_control:
+    label: "免疫指挥与调控"
+    color: "#D62728"  # red
+    genes:
+      - Ccl1
+      - Cxcl10
+      - Cxcl2
+      - Csf2
+      - Lta
+      - Il2ra
+      - Tnfrsf9
+      - Cd83
+      - Gzmk
+      - Nfkbia
+    pathways:
+      - HALLMARK_INTERFERON_GAMMA_RESPONSE
+      - HALLMARK_TNFA_SIGNALING_VIA_NFKB
+      - HALLMARK_INFLAMMATORY_RESPONSE
+
+  internal_state_reprogramming:
+    label: "内部状态重编程：生存与能量"
+    color: "#2CA02C"  # green
+    genes:
+      # 汇总关键基因（抑制与激活均纳入此模块的总基因集，用于统一高亮与热图）
+      - Orc1
+      - Ldlr
+      - Aqp9
+      - Bcl2a1a
+      - Bcl2a1d
+      - Bcl2a1b
+    details:
+      suppress:
+        proliferation:
+          genes: [Orc1]
+          pathways: [HALLMARK_MITOTIC_SPINDLE]
+        lipid_uptake:
+          genes: [Ldlr, Aqp9]
+          pathways: [Cholesterol metabolism]
+      activate:
+        survival:
+          genes: [Bcl2a1a, Bcl2a1d, Bcl2a1b]
+          pathways: [HALLMARK_IL2_STAT5_SIGNALING]
+        energy:
+          pathways:
+            - HALLMARK_OXIDATIVE_PHOSPHORYLATION
+            - HALLMARK_FATTY_ACID_METABOLISM
+
+thresholds:
+  padj: 0.05
+  log2fc: 0.5
+labeling:
+  top_n_per_module: 10
+contrasts:
+  include:
+    - 0W_NCD_vs_1W_MCD
+    - 0W_NCD_vs_2W_MCD
+    - 0W_NCD_vs_6W_MCD
+input:
+  tables_dir: 3_Analysis/2_DifferetialAnalysis/results/tables
+  deg_filename: all_cells.DESeq2.results.csv
+  deg_alt_filename: all_cells.DESeq2.raw.csv
+  gsea_filename: all_cells.fgsea.results.csv
+output:
+  base_dir: 3_Analysis/2_DifferetialAnalysis/results/plots/module_viz
+
+volcano:
+  y_max: 300
+
+enrichment:
+  rank_by: padj  # 可选: padj 或 NES；用于确定top排序
+  focus_color: "#D62728"  # 特别关注通路在坐标轴文字中的颜色（默认）
+  focus_pathways:
+    - HALLMARK_INTERFERON_GAMMA_RESPONSE
+    - HALLMARK_TNFA_SIGNALING_VIA_NFKB
+    - HALLMARK_INFLAMMATORY_RESPONSE
+    - Cholesterol metabolism
+    - HALLMARK_IL2_STAT5_SIGNALING
+    - HALLMARK_OXIDATIVE_PHOSPHORYLATION
+    - HALLMARK_FATTY_ACID_METABOLISM
+  # 为特定通路指定专属颜色（将同时加粗显示）
+  custom_colors:
+    HALLMARK_FATTY_ACID_METABOLISM: "#2CA02C"  # 绿色
+    HALLMARK_OXIDATIVE_PHOSPHORYLATION: "#2CA02C"  # 绿色

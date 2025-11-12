@@ -171,8 +171,8 @@ for (cmp in comparisons) {
   }
 
   # 发现可用的“簇/整体”标识：依据 *.DESeq2.results.csv 文件名前缀
-  res_files <- list.files(table_dir, pattern = "\\.DESeq2\\.results\\.csv$", full.names = FALSE)
-  clusters <- unique(gsub("\\.DESeq2\\.results\\.csv$", "", res_files))
+  res_files <- list.files(table_dir, pattern = "\\.DESeq2\\.results(\\.raw)?\\.csv$", full.names = FALSE)
+  clusters <- unique(gsub("\\.DESeq2\\.results(\\.raw)?\\.csv$", "", res_files))
   # clusters 含 "all_cells"（整体）或具体簇名（例如 0, 1, 2）
   if (length(clusters) == 0) {
     warning(sprintf("[WARN] No results csv found for %s", cmp_id))
@@ -181,8 +181,16 @@ for (cmp in comparisons) {
 
   for (cl in clusters) {
     cat(sprintf("[INFO]   Cluster: %s\n", cl))
-    res_path <- file.path(table_dir, sprintf("%s.DESeq2.results.csv", cl))
-    res_df <- safe_fread(res_path)
+res_candidates <- c(
+  file.path(table_dir, sprintf("%s.DESeq2.results.csv", cl)),
+  file.path(table_dir, sprintf("%s.DESeq2.results.raw.csv", cl))
+)
+res_path <- res_candidates[which(file.exists(res_candidates))[1]]
+if (is.na(res_path)) {
+  warning(sprintf("[WARN]   No results file found for %s", cl))
+  next
+}
+res_df <- safe_fread(res_path)
     if (is.null(res_df) || nrow(res_df) == 0) {
       warning(sprintf("[WARN]   Empty or missing results: %s", res_path))
       next
@@ -212,24 +220,25 @@ for (cmp in comparisons) {
     max_finite <- if (any(finite_mask)) max(res_df$nlog10_padj[finite_mask], na.rm = TRUE) else 0
     res_df$nlog10_padj[!finite_mask] <- max_finite + 1
 
-    label_col <- if (tolower(vol_label_by) == "pvalue") "pvalue" else "padj"
-    ord <- order(res_df[[label_col]], na.last = TRUE)          # 较小更显著，排前
-    top_lbl_df <- res_df[ord, ][seq_len(min(vol_top_labels, nrow(res_df))), , drop = FALSE]
+# 仅高亮指定基因（模块着色），默认点灰色
+res_df_hl <- res_df %>% dplyr::left_join(df_highlight, by = c("gene" = "gene"))
+hl_df <- res_df_hl %>% dplyr::filter(!is.na(module))
 
-    p_vol <- ggplot(res_df, aes(x = log2FoldChange, y = nlog10_padj, color = sig)) +
-      geom_point(alpha = 0.6, size = 1.2) +
-      scale_color_manual(values = c("FALSE" = "grey70", "TRUE" = "#D55E00")) +
-      geom_hline(yintercept = -log10(padj_cutoff), linetype = "dashed", color = "grey50") +
-      geom_vline(xintercept = c(-lfc_threshold, lfc_threshold), linetype = "dashed", color = "grey50") +
-      ggrepel::geom_text_repel(
-        data = top_lbl_df %>% filter(!is.na(gene)),
-        aes(label = gene),
-        size = 3, max.overlaps = 50, min.segment.length = 0
-      ) +
-      labs(title = sprintf("Volcano | %s | %s", cmp_id, cl),
-           x = "log2FoldChange",
-           y = "-log10(padj)") +
-      theme_minimal(base_size = 12)
+p_vol <- ggplot2::ggplot(res_df_hl, ggplot2::aes(x = log2FoldChange, y = nlog10_padj)) +
+  ggplot2::geom_point(color = "grey70", alpha = 0.6, size = 1.2) +
+  ggplot2::geom_point(data = hl_df, ggplot2::aes(color = module), size = 2.5) +
+  ggplot2::scale_color_manual(values = module_colors) +
+  ggplot2::geom_hline(yintercept = -log10(padj_cutoff), linetype = "dashed", color = "grey50") +
+  ggplot2::geom_vline(xintercept = c(-lfc_threshold, lfc_threshold), linetype = "dashed", color = "grey50") +
+  ggrepel::geom_text_repel(
+    data = hl_df,
+    ggplot2::aes(label = gene, color = module),
+    size = 3, max.overlaps = 50, min.segment.length = 0
+  ) +
+  ggplot2::labs(title = sprintf("Volcano | %s | %s", cmp_id, cl),
+       x = "log2FoldChange",
+       y = "-log10(padj)") +
+  ggplot2::theme_minimal(base_size = 12)
 
     vol_out <- file.path(vol_dir, sprintf("%s.volcano.png", cl))
     ggsave(vol_out, plot = p_vol, width = 7, height = 5, dpi = 300)
@@ -243,14 +252,17 @@ for (cmp in comparisons) {
       warning("[WARN]   'baseMean' not found; MA plot x-axis will use rank of mean instead.")
       res_df$baseMean <- rank(abs(res_df$log2FoldChange), ties.method = "average")
     }
-    p_ma <- ggplot(res_df, aes(x = log10(baseMean + 1), y = log2FoldChange, color = sig)) +
-      geom_point(alpha = 0.6, size = 1.2) +
-      scale_color_manual(values = c("FALSE" = "grey70", "TRUE" = "#1B9E77")) +
-      geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
-      labs(title = sprintf("MA | %s | %s", cmp_id, cl),
+res_df_hl_ma <- res_df %>% dplyr::left_join(df_highlight, by = c("gene" = "gene"))
+hl_df_ma <- res_df_hl_ma %>% dplyr::filter(!is.na(module))
+p_ma <- ggplot2::ggplot(res_df_hl_ma, ggplot2::aes(x = log10(baseMean + 1), y = log2FoldChange)) +
+  ggplot2::geom_point(color = "grey70", alpha = 0.6, size = 1.2) +
+  ggplot2::geom_point(data = hl_df_ma, ggplot2::aes(color = module), size = 2.5) +
+  ggplot2::scale_color_manual(values = module_colors) +
+  ggplot2::geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
+  ggplot2::labs(title = sprintf("MA | %s | %s", cmp_id, cl),
            x = "log10(baseMean + 1)",
            y = "log2FoldChange") +
-      theme_minimal(base_size = 12)
+  ggplot2::theme_minimal(base_size = 12)
 
     ma_out <- file.path(ma_dir, sprintf("%s.MA.png", cl))
     ggsave(ma_out, plot = p_ma, width = 7, height = 5, dpi = 300)

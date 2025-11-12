@@ -20,6 +20,7 @@
 *.tsv
 *.txt
 *.log
+*.bam
 
 # Output files
 *.png
@@ -49,6 +50,7 @@ Desktop.ini
 *.swp
 *.swo
 *~
+.clinerules/
 
 # Keep important scripts and docs
 !Files/UMAP/scripts/*.R
