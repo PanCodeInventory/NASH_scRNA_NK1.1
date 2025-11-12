@@ -1,0 +1,99 @@
+# 簇映射配置文件
+# 用于处理簇重命名和隐藏的逻辑
+
+# 簇重命名映射
+cluster_renaming:
+  # 原始簇5 (B细胞污染) → 簇6 (隐藏)
+  original_5_to_6:
+    old_cluster: 5
+    new_cluster: 6
+    description: "B cell contamination cluster"
+    marker_genes: ["Iglc3", "Cd79a", "Iglc2", "Ebf1", "Ms4a1", "Cd79b", "Ighm", "Iglc1", "Ly6d", "Pax5"]
+    hide_in_visualization: true
+    
+  # 原始簇6 (增殖) → 簇5 (可见)
+  original_6_to_5:
+    old_cluster: 6
+    new_cluster: 5
+    description: "Proliferation cluster"
+    marker_genes: ["H2afx", "Cdca3", "Hist1h3c", "H2afv", "Hmgn2", "Knl1", "Hist1h2ab", "Mki67", "Ezh2", "Tuba1c"]
+    hide_in_visualization: false
+
+# 保留不变的簇
+stable_clusters:
+  - cluster: 0
+    description: "Reference cluster"
+  - cluster: 1
+    description: "NK cell subset 1"
+  - cluster: 2
+    description: "NK cell subset 2"
+  - cluster: 3
+    description: "NK cell subset 3"
+  - cluster: 4
+    description: "NK cell subset 4"
+
+# 隐藏簇配置
+hidden_clusters:
+  - 6  # B细胞污染簇
+
+# 可见簇配置
+visible_clusters:
+  - 0, 1, 2, 3, 4, 5  # 除B细胞污染外的所有簇
+
+# 细胞类型过滤配置
+cell_type_filtering:
+  # 需要去除的细胞类型
+  remove_types:
+    - "NKT"
+    - "NK T"
+    - "Natural Killer T"
+    
+  # 需要保留的细胞类型（优先级高于remove）
+  keep_types:
+    - "NK"
+    - "Natural Killer"
+    - "ILC"
+    - "Innate Lymphoid"
+    
+  # 过滤规则
+  rules:
+    - name: "remove_nkt"
+      pattern: "\\bnkt\\b|\\bnk\\s*t\\b|natural\\s*killer\\s*t"
+      action: "remove"
+    - name: "keep_nk_ilc"
+      pattern: "\\bnk\\b|\\bnk\\s*cell\\b|natural\\s*killer(\\s*cell)?\\b|\\bilc\\b|innate\\s*lymphoid"
+      action: "keep"
+
+# 输出文件命名约定
+output_naming:
+  # 基础RDS文件名
+  base_rds: "nk.integrated"
+  
+  # 各阶段后缀
+  suffixes:
+    after_import: ".imported"
+    after_qc: ".qc_filtered"
+    after_annotation: ".annotated"
+    after_filtering: ".filtered"
+    after_tuning: ".tuned"
+    after_renaming: ".renamed"
+    
+  # 特定处理后缀
+  special_suffixes:
+    no_doublets: ".no_doublets"
+    no_nkt: ".noNKT"
+    no_cluster6: ".noCluster6"
+    final: ".final"
+
+# 验证配置
+validation:
+  # 关键基因验证
+  marker_validation:
+    cluster_5_proliferation: ["Mki67", "H2afx", "Cdca3", "Hist1h3c"]
+    cluster_6_b_cell: ["Cd79a", "Iglc3", "Ebf1", "Ms4a1"]
+    
+  # 细胞数验证
+  cell_count_validation:
+    expected_cluster_5_min: 100
+    expected_cluster_6_min: 150
+    total_cells_tolerance: 0.05  # 5%容差

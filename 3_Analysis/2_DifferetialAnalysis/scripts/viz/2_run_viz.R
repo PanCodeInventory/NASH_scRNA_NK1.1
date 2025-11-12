@@ -327,6 +327,10 @@ for (cmp in comparisons) {
             enr_tbl_out <- file.path(enr_tbl_dir, sprintf("%s.fgsea.results.csv", cl))
             data.table::fwrite(as.data.frame(fg), enr_tbl_out)
             cat(sprintf("[INFO]     Saved enrichment table: %s\n", enr_tbl_out))
+            # 另存一份到 results/tables/<cmp_id>/ 便于统一查阅
+            enr_tbl_out_tables <- file.path(out_root, "results", "tables", cmp_id, sprintf("%s.fgsea.results.csv", cl))
+            data.table::fwrite(as.data.frame(fg), enr_tbl_out_tables)
+            cat(sprintf("[INFO]     Copied enrichment table to tables: %s\n", enr_tbl_out_tables))
             # 绘制 Top 15（按 padj 与 |NES| 排序）
             topn <- fg %>%
               arrange(padj, desc(abs(NES))) %>%

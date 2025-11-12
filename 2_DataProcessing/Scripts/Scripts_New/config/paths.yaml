@@ -1,0 +1,38 @@
+# 数据路径配置文件
+# 配置scRNA-seq数据处理流程中的所有路径
+
+# 输入数据路径
+input:
+  base_dir: "2_DataProcessing"
+  sample_dirs: 
+    - "1_Files/Matrix/NK1.1/NCD_NK1.1"
+    - "1_Files/Matrix/NK1.1/MCD-1W_NK1.1"
+    - "1_Files/Matrix/NK1.1/MCD-2W_NK1.1"
+    - "1_Files/Matrix/NK1.1/MCD-6W_NK1.1"
+  
+# 输出路径
+output:
+  rds_dir: "2_DataProcessing/RDS"
+  plots_dir: "2_DataProcessing/plots"
+  reports_dir: "2_DataProcessing/reports"
+  backup_dir: "2_DataProcessing/backup"
+  data_dir: "2_DataProcessing/data"
+
+# 时间点配置
+timepoints:
+  - "0W_NCD"
+  - "1W_MCD"
+  - "2W_MCD"
+  - "6W_MCD"
+
+# 样本信息映射
+sample_mapping:
+  "0W_NCD": "NCD_NK1.1"
+  "1W_MCD": "MCD-1W_NK1.1"
+  "2W_MCD": "MCD-2W_NK1.1"
+  "6W_MCD": "MCD-6W_NK1.1"
+
+# 备份路径
+backup:
+  original_scripts: "2_DataProcessing/Scripts_Backup/original"
+  deprecated_scripts: "2_DataProcessing/Scripts_Backup/deprecated"
