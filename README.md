@@ -137,4 +137,10 @@ scRNA-seq/
     - `2_DataProcessing/reports/visualization_report_hidden_cluster6.md`（可视化报告）
   - 质量控制：所有原始文件完整备份至`2_DataProcessing/reports/backup/`
 
-
+- 2025-11-12（基因集打分分析）
+  - 新增模块：`3_Analysis/6_GeneSetAnalysis/`
+  - 新增脚本：`3_Analysis/6_GeneSetAnalysis/scripts/stages/01_score_genesets.R`
+  - 分析目标：使用 `geneset.txt` 中定义的基因集（iNK, TR-NK, CD56bright-like, CD56dim-like）对 `nk.integrated.v4.rds` 中的细胞簇进行打分。
+  - 产出：
+    - `3_Analysis/6_GeneSetAnalysis/results/plots/` 目录下每个基因集的小提琴图。
+    - 完整的项目管理文档（`guidedoc.md`, `process.md`, `summary.md`）。
