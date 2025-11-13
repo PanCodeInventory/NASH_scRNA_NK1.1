@@ -1,169 +1,168 @@
 # scRNA-seq NASH NK细胞分析项目
 
-## 项目概述
+本仓库用于在小鼠 NASH（非酒精性脂肪性肝炎）疾病模型中，围绕 NK 细胞进行单细胞 RNA 测序（scRNA-seq）分析的全流程管理与实现。包含数据组织、主数据处理管线（清理、调参、UMAP/聚类）、以及下游分析（簇比例、差异表达、基因集与特异基因分析）等。
 
-本项目专注于 NASH（非酒精性脂肪性肝炎）疾病模型中 NK 细胞的单细胞 RNA 测序分析。通过分析不同时间点（0 周、1 周、2 周、6 周）的 NK 细胞样本，研究 NASH 疾病进程中 NK 细胞的变化规律。
+## 项目概览
 
-## 项目结构
+- 研究对象：NK 细胞在 NASH 进程中（0W、1W、2W、6W）的时序变化
+- 核心对象：若干经过清理、注释、调参与重命名的 Seurat RDS 对象（例如 `nk.integrated.singleR_annotated.noCluster6.tuned.renamed.rds` 等）
+- 统一的项目管理文档体系：每个模块均包含 `reports/guidedoc.md`、`reports/process.md`、`reports/summary.md`，确保可追溯、可复现
+
+## 目录结构（摘要）
 
 ```
 scRNA-seq/
-├── README.md
-├── .gitignore
-├── 1_Files/                          # 原始/预处理数据（按分组）
-│   ├── NK1.1/
-│   └── CD45.2/
-├── 2_DataProcessing/                 # 主数据处理管线（脚本与产物）
-│   ├── 1_Samples_Merging/
-│   │   ├── Scripts & guidedoc*.md
-│   │   └── Results/{data,plots,rds}
-│   ├── 2_Doublet_Removed/            # 去双胞/注释/清理产出（报告与图件）
-│   │   ├── RDS/                      # R 对象（清理后 / 单细胞注释 / noNKT / tuned）
-│   │   ├── plots/                    # UMAP 等图件
-│   │   └── reports/                  # 报告（cleaning / singleR 修复 / noNKT）
-│   ├── 3_UMAP-Tuning/                # UMAP 调参与选择产出（metrics/plots/logs）
-│   │   ├── data/                     # 调参指标与候选 CSV
-│   │   ├── plots/                    # 调参热力图与候选 UMAP
-│   │   └── logs/                     # 运行配置与会话信息
-│   └── Scripts/                      # 脚本（生成、清理、调参）
-│       ├── generate_umap_nk.R
-│       ├── generate_umap_nk_post.R
-│       ├── remove_doublets_and_contaminants.R
-│       ├── singleR_annotation_fix.R
-│       ├── remove_NKT_cells.R                  # 新增：在已注释对象上剔除 NKT
-│       ├── tune_noNKT_dims_resolution.R        # 新增：基于 noNKT 对象进行 dims × resolution 调参并重跑
-│       ├── remove_clusters_and_recompute.R     # 新增：移除指定簇并重新计算UMAP/聚类
-│       └── tune_noCluster6_dims_resolution.R   # 新增：基于无Cluster6对象的调参脚本
-├── 2_Filter/                         # 可选镜像产出目录（按你的偏好保留）
-│   └── 2_Doublet_Removed/{RDS,plots,reports}
-└── 3_Analysis/                       # 下游分析
-    ├── 1.ClusterAnalysis/            # 簇比例与差异基因分析产出
-    │   ├── data/                     # CSV 表格（比例/markers）
-    │   ├── plots/                    # 图件（折线/堆叠）
-    │   └── logs/                     # 运行日志与会话信息
-    └── Scripts/                      # 下游分析脚本
-        ├── export_cluster_proportions.R        # 按时间点×簇统计并绘图
-        ├── find_cluster_markers.R             # 每簇差异基因（CLI 参数版，含回退策略）
-        └── find_markers_simple.R              # 每簇差异基因（简化版，快速产出）
+├─ README.md
+├─ .gitignore
+├─ 1_Files/                          # 原始/预处理数据（分组）
+│  ├─ Bam/
+│  │  ├─ MCD-1w/ MCD-2w/ MCD-6w/ NCD/
+│  ├─ Matrix/
+│  │  ├─ CD45.2/                     # CD45.2 分选数据（含各时间点）
+│  │  └─ NK1.1/                      # NK1.1 分选数据（含各时间点、RDS）
+│  └─ RDS/                           # 原始或中间 RDS 对象（如有）
+│
+├─ 2_DataProcessing/                 # 主数据处理管线（脚本与产物）
+│  ├─ 1_Samples_Merging/
+│  │  ├─ guidedoc.md / guidedoc_*.md
+│  │  └─ Results/
+│  │     ├─ data/ plots/ rds/
+│  ├─ 2_Doublet_Removed/
+│  │  ├─ plots/                      # 清理/注释后 UMAP 等图件
+│  │  └─ reports/                    # 清理与注释修复等报告
+│  ├─ 3_UMAP-Tuning/
+│  │  ├─ data/ logs/ plots/          # 调参与指标、会话信息与图件
+│  ├─ reports/
+│  │  ├─ analysis_files_update_report.md
+│  │  ├─ cluster_renaming_*.md       # 簇重命名策略与执行报告
+│  │  └─ visualization_report_*.md   # 可视化报告（含隐藏簇策略）
+│  └─ scripts/
+│     ├─ OVERVIEW.md
+│     ├─ Scripts_New/                # 新版统一管线
+│     │  ├─ run_pipeline.R
+│     │  ├─ config/                  # cluster_mapping.yaml, parameters.yaml, paths.yaml
+│     │  ├─ stages/                  # 01~06 分阶段脚本
+│     │  │  ├─ 01_data_import.R
+│     │  │  ├─ 02_basic_qc.R
+│     │  │  ├─ 03_cell_annotation.R
+│     │  │  ├─ 04_cell_filtering.R
+│     │  │  ├─ 05_parameter_tuning.R
+│     │  │  └─ 06_visualization.R
+│     │  └─ utils/                   # 复用函数（plotting/seurat/validation）
+│     ├─ Scripts_Backup/
+│     │  ├─ original/                # 历史脚本归档（remove_* / tune_* 等）
+│     │  └─ deprecated/
+│     └─ Tailor_scripts/             # 定制化脚本（如过滤特定簇等）
+│
+└─ 3_Analysis/                       # 下游分析模块
+   ├─ 1_ClusterAnalysis/
+   │  └─ Enrichment/
+   │     ├─ scripts/                 # 比例导出、标记基因等
+   │     ├─ results/
+   │     │  ├─ enrichment/ enrichment_gsea_gobp/
+   │     │  ├─ plots/ markers/
+   │     │  └─ tables/
+   │     ├─ logs/
+   │     └─ reports/                 # guidedoc/process/summary
+   ├─ 2_DifferetialAnalysis/
+   │  ├─ scripts/ config.yaml
+   │  ├─ results/ plots/ tables/
+   │  ├─ logs/
+   │  └─ reports/                    # run_summary.md 等
+   └─ 3_GeneAnalysis/
+      ├─ 1_SpecificGene/             # 单基因分布与变化
+      │  ├─ scripts/ config.yaml
+      │  ├─ results/ plots/
+      │  └─ reports/                 # guidedoc/process/summary
+      └─ 2_GeneSetAnalysis/          # 基因集打分
+         ├─ scripts/
+         │  ├─ stages/               # 01_score_genesets.R
+         │  ├─ utils/ config/ Scripts_Backup/
+         ├─ results/ data/ plots/ tables/
+         ├─ logs/
+         └─ reports/                 # guidedoc/process/summary
 ```
 
-## 样本与分组信息
-- 分组：NCD（0W）与 MCD（1W/2W/6W）
-- 细胞类型：NK1.1（自然杀伤细胞）
+> 注：项目结构清单为当前仓库中可见目录的聚合摘要，若有新模块（如 `3_Analysis/2_TimepointAnalysis/...`）在后续执行中将继续补充。
 
-## 分析流程概览
+## 快速开始
 
-1) 样本合并与整合（SCTransform + Anchors）  
-2) 去双胞（scDblFinder，按样本/时间点分组）  
-3) 自动注释（SingleR，logcounts 修复策略）  
-4) UCell 基因签名评分（NK/T/B/Myeloid/DC/Plasma/Endothelium/Fibroblast/Hepatocyte）  
-5) 去污染（细胞级阈值 + 簇级非 NK 占比阈值）  
-6) 重跑降维/聚类/UMAP（兼容 SCT/RNA 多模型，必要时回退）  
-7) NKT 剔除（基于 SingleR 标签严格规则）  
-8) dims × resolution 调参（UMAP/聚类）与最终参数选择  
-9) 按最终参数生成分面 UMAP（timepoint）与标签 UMAP（SingleR）
+1) 准备运行环境  
+- R（建议 4.x）、Seurat v5、SingleR、scDblFinder、UCell、tidyverse 等。  
+- 依赖以脚本为准，若缺包请按报错安装或在 `scripts/Scripts_New/utils` 中查看调用。
 
-## 技术栈
-- R、Seurat、SingleCellExperiment、scDblFinder、SingleR、celldex、scater、UCell、ggplot2、patchwork
+2) 配置参数  
+- 编辑 `2_DataProcessing/scripts/Scripts_New/config/paths.yaml`、`parameters.yaml`、`cluster_mapping.yaml`。
+- 路径与参数需与本机数据位置一致（如 `1_Files/Matrix/...`）。
 
-## 时间点分析 - 特定基因（Lgals1）
-本次新增模块用于展示 Lgals1 在不同时间点（0W_NCD、1W_MCD、2W_MCD、6W_MCD）的表达分布：
-- 模块路径：`3_Analysis/2_TimepointAnalysis/2_SpecificGeneVariation/`
-- 脚本与配置：
-  - `scripts/plot_specific_gene_variation.R`
-  - `scripts/config.yaml`
-- 主要输出：
-  - 小提琴图（全体细胞）：`results/plots/Violin/Violin_Lgals1_byTimepoint_allcells.(png|svg)`
-  - 小提琴图（表达>0）：`results/plots/Violin/Violin_Lgals1_byTimepoint_expr_gt0.(png|svg)`
-  - 汇总表：`results/tables/Lgals1_byTimepoint_summary.csv`
-- 说明文档：`reports/guidedoc.md`、`reports/process.md`、`reports/summary.md`
+3) 运行主管线（示例）  
+```bash
+Rscript 2_DataProcessing/scripts/Scripts_New/run_pipeline.R
+```
+- 阶段性产物与日志将输出到对应的 `2_Doublet_Removed/`、`3_UMAP-Tuning/`、以及 `reports/` 目录。
+- 完整执行记录请参考各模块的 `reports/process.md`。
 
+## 下游分析入口（示例）
 
-## 更新
+- 簇比例与标记基因（ClusterAnalysis/Enrichment）
+  - `3_Analysis/1_ClusterAnalysis/Enrichment/scripts/export_cluster_proportions.R`
+  - `3_Analysis/1_ClusterAnalysis/Enrichment/scripts/find_markers_simple.R`
+  - 产出：`results/tables/`、`results/plots/` 等
 
-- 2025-10-20
-  - 新增脚本：`Files/UMAP/scripts/remove_doublets_and_contaminants.R`（集成 scDblFinder 去双胞、SingleR 自动注释、UCell 签名评分、去污染规则与重分析的主流程）
-  - 修复 Seurat v5 多层 assay 转换为 SCE 的问题，增强元数据行名对齐与日志/报告目录创建的健壮性
+- 差异表达分析（DifferetialAnalysis）
+  - `3_Analysis/2_DifferetialAnalysis/scripts/1_run_deg_analysis.R`
+  - 可视化：`scripts/viz/2_run_viz.R` 与 `scripts/viz/run_module_viz.R`
+  - 产出：`results/plots/`（volcano/heatmap/enrichment 等）、`results/tables/`
 
-- 2025-10-20 深夜
-  - 新增特异性 SingleR 修复脚本：`Files/UMAP/scripts/singleR_annotation_fix.R`（从 counts 构建 SCE，scater::logNormCounts 生成 logcounts，显式以 logcounts 作为 SingleR 输入，规避 data 层为空告警）
-  - 产出对象与文档：
-    - `Files/Doublet_Removed/RDS/nk.integrated.singleR_annotated.rds`
-    - `Files/Doublet_Removed/reports/singleR_fix_report.md`
-    - `Files/Doublet_Removed/plots/SingleR_label_barplot.png`
+- 基因集分析（GeneSetAnalysis）
+  - `3_Analysis/3_GeneAnalysis/2_GeneSetAnalysis/scripts/stages/01_score_genesets.R`
+  - 产出：`results/plots/`（小提琴图等）、`results/data/`、`results/tables/`
 
-- 2025-10-21（清理与重分析）
-  - 将 SingleR 修复策略集成至主流程并完成全流程清理与重分析（保留 NK/ILC）
-  - 去双胞结果：移除 312 个细胞（约 1.61%）
-  - 生成清理后对象与报告（历史路径 Files/*）：
-    - `Files/Doublet_Removed/RDS/nk.integrated.filtered.rds`
-    - `Files/Doublet_Removed/RDS/nk.integrated.doublet_scored.rds`
-    - `Files/Doublet_Removed/reports/cleaning_report.md`
-  - 图件（历史路径 Files/*）：DoubletScore、Cluster_nonNK_fraction、UMAP 等
+- 特异基因分析（SpecificGene）
+  - `3_Analysis/3_GeneAnalysis/1_SpecificGene/scripts/plot_specific_gene_variation.R`
+  - 产出：`results/plots/` 与汇总 `results/tables/`
 
-- 2025-10-21（NKT 剔除 + UMAP 调参与最终）
-  - 新增脚本：`2_DataProcessing/Scripts/remove_NKT_cells.R`（严格规则排除 NKT）
-  - 新增脚本：`2_DataProcessing/Scripts/tune_noNKT_dims_resolution.R`（调参与最终降维/聚类/UMAP）
-  - 产出：
-    - NKT 剔除：19126 → 19007（移除 119，0.62%）
-    - 调参指标与候选：`2_DataProcessing/3_UMAP-Tuning/data/*`
-    - 最终参数：dims=10、res=0.3（见 `selected_params.txt`）
-    - 最终对象与图：`2_DataProcessing/2_Doublet_Removed/RDS/nk.integrated.noNKT.tuned.rds`；`3_UMAP-Tuning/plots/*`
+> 所有模块均配套 `reports/guidedoc.md`（目标与方案）、`reports/process.md`（执行记录与 Todo）、`reports/summary.md`（结果总结）。
 
-- 2025-10-21（下游分析 3_Analysis）
-  - 新增脚本：`3_Analysis/Scripts/export_cluster_proportions.R`、`3_Analysis/Scripts/find_cluster_markers.R`、`3_Analysis/Scripts/find_markers_simple.R`
-  - 产出（示例）：
-    - `3_Analysis/1.ClusterAnalysis/data/cluster_counts_by_timepoint.csv`
-    - `3_Analysis/1.ClusterAnalysis/data/cluster_proportions_by_timepoint.csv`
-    - `3_Analysis/1.ClusterAnalysis/plots/cluster_proportion_lineplot.(png|pdf)`
-    - `3_Analysis/1.ClusterAnalysis/plots/cluster_composition_stackedbar.(png|pdf)`
-    - `3_Analysis/1.ClusterAnalysis/data/markers_all_clusters.csv`
-    - `3_Analysis/1.ClusterAnalysis/data/markers_top10_per_cluster.csv`
-  - 兼容与性能：
-    - 时间点顺序与因子/字符比较的稳健处理；integrated→SCT→RNA 的差异分析回退；可选安装 presto 提升速度
+## 关键对象与报告
 
-- 2025-10-23（Cluster 6污染清理 + 重新调优）
-  - 新增脚本：`2_DataProcessing/Scripts/remove_clusters_and_recompute.R`（移除指定簇并重新计算UMAP/聚类）
-  - 新增脚本：`2_DataProcessing/Scripts/tune_noCluster6_dims_resolution.R`（基于无Cluster6对象的参数优化）
-  - 污染清理：移除596个细胞（19,126→18,530，移除3.1%），主要是B细胞污染
-  - 重新调优：最佳参数dims=10, resolution=0.3，轮廓系数0.276
-  - 重新聚类：获得7个生物学意义明确的NK细胞亚群
-  - 更新分析：
-    - `3_Analysis/1.ClusterAnalysis/data/cluster_proportions_by_timepoint.csv`
-    - `3_Analysis/1.ClusterAnalysis/data/markers_top10_per_cluster.csv`
-    - `3_Analysis/1.ClusterAnalysis/plots/cluster_proportion_lineplot.(png|pdf)`
-  - 核心对象：`2_DataProcessing/RDS/nk.integrated.singleR_annotated.noCluster6.tuned.rds`
+- 清理与注释修复报告：
+  - `2_DataProcessing/2_Doublet_Removed/reports/cleaning_report.md`
+  - `2_DataProcessing/2_Doublet_Removed/reports/singleR_fix_report.md`
+- 簇重命名与隐藏策略：
+  - `2_DataProcessing/reports/cluster_renaming_final_report.md`
+  - `2_DataProcessing/reports/visualization_report_hidden_cluster6.md`
+- 最终/阶段性对象：
+  - `2_DataProcessing/2_Doublet_Removed/RDS/*`（如有）
+  - `2_DataProcessing/RDS/nk.integrated.singleR_annotated.noCluster6.tuned.renamed.rds`（如有）
 
-- 2025-10-23（簇重命名和隐藏策略）
-  - 新增脚本：`2_DataProcessing/Scripts/rename_and_hide_clusters.R`（簇重命名和RDS对象更新）
-  - 新增脚本：`2_DataProcessing/Scripts/correct_cluster_renaming.R`（分析文件重命名校正）
-  - 新增脚本：`2_DataProcessing/Scripts/visualize_with_hidden_clusters.R`（隐藏簇6的可视化）
-  - 重命名策略：
-    - 原簇5（B细胞污染：Iglc3、Cd79a等）→ 簇6（在可视化中隐藏）
-    - 原簇6（增殖：H2afx、Mki67等）→ 簇5（可见）
-  - 更新文件：
-    - `2_DataProcessing/RDS/nk.integrated.singleR_annotated.noCluster6.tuned.renamed.rds`
-    - `3_Analysis/1.ClusterAnalysis/data/*`（所有标记基因和比例文件）
-    - `3_Analysis/1.ClusterAnalysis/plots/*_hidden_cluster6.(png|pdf)`（隐藏簇6的图件）
-  - 报告文档：
-    - `2_DataProcessing/reports/cluster_renaming_final_report.md`（完整执行报告）
-    - `2_DataProcessing/reports/visualization_report_hidden_cluster6.md`（可视化报告）
-  - 质量控制：所有原始文件完整备份至`2_DataProcessing/reports/backup/`
+## 近期更新（摘要）
 
-- 2025-11-12（基因集打分分析）
-  - 新增模块：`3_Analysis/6_GeneSetAnalysis/`
-  - 新增脚本：`3_Analysis/6_GeneSetAnalysis/scripts/stages/01_score_genesets.R`
-  - 分析目标：使用 `geneset.txt` 中定义的基因集（iNK, TR-NK, CD56bright-like, CD56dim-like）对 `nk.integrated.v4.rds` 中的细胞簇进行打分。
-  - 产出：
-    - `3_Analysis/6_GeneSetAnalysis/results/plots/` 目录下每个基因集的小提琴图。
-    - 完整的项目管理文档（`guidedoc.md`, `process.md`, `summary.md`）。
+- 2025-11-13 时间点特异基因表达分布（Lgals1）
+  - 模块：`3_Analysis/2_TimepointAnalysis/2_SpecificGeneVariation/`（包含两版小提琴图与汇总表）
+  - 文档：`reports/guidedoc.md`、`reports/process.md`（样式更新：叠加黑色小点）、`reports/summary.md`
 
-- 2025-11-13（时间点特定基因表达分布）
-  - 新增模块：`3_Analysis/2_TimepointAnalysis/2_SpecificGeneVariation/`
-  - 目标：展示 Lgals1 在不同时间点的表达分布（小提琴图两版：包含所有细胞、仅表达>0的细胞），并输出汇总统计表。
-  - 脚本与配置：`scripts/plot_specific_gene_variation.R`、`scripts/config.yaml`
-  - 产出：
-    - `results/plots/Violin/Violin_Lgals1_byTimepoint_allcells.(png|svg)`
-    - `results/plots/Violin/Violin_Lgals1_byTimepoint_expr_gt0.(png|svg)`
-    - `results/tables/Lgals1_byTimepoint_summary.csv`
-  - 文档：`reports/guidedoc.md`、`reports/process.md`（含样式更新记录：叠加黑色小点）`reports/summary.md`
+- 2025-11-12 基因集打分（iNK, TR-NK, CD56bright-like, CD56dim-like）
+  - 模块：`3_Analysis/3_GeneAnalysis/2_GeneSetAnalysis/`
+  - 脚本：`scripts/stages/01_score_genesets.R`
+  - 产出：`results/plots/` 各基因集小提琴图与完整文档集
+
+- 2025-10-23 簇重命名与隐藏策略 + 重新调优
+  - 移除污染簇、最佳参数（示例：dims=10、res=0.3）、获得具生物学意义的 NK 子群
+  - 报告与图件已系统化存档至 `2_DataProcessing/reports/` 与 `3_Analysis/1_ClusterAnalysis/Enrichment/results/*`
+
+- 2025-10-20~21 清理、SingleR 修复与全流程重跑
+  - 集成 scDblFinder 去双胞、SingleR 自动注释、UCell 评分等
+  - 规范化 SCE/logcounts 流程，稳健处理元数据对齐与日志/报告目录生成
+  - 历史脚本已归档至 `2_DataProcessing/scripts/Scripts_Backup/original/`
+
+> 更详细的逐日变更与产出示例请参考各子模块内的 `reports/*` 与 `results/*`。
+
+## 贡献与协作
+
+- 提交规范：建议使用约定式提交（如 `feat:`、`fix:`、`docs:`、`refactor:` 等），并在相关模块的 `reports/process.md` 中同步更新执行记录。
+- 问题与建议：请在对应模块的 `reports/process.md` 中记录，或发起 Issue。
+
+## 远程仓库
+
+- origin: `git@github.com:PanCodeInventory/scRNA-seq-NASH-NK-analysis.git`
