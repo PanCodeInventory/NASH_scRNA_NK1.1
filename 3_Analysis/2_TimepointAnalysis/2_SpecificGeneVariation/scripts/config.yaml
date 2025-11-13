@@ -1,0 +1,24 @@
+# 配置：特定基因在不同时间点的表达分布
+# 任务：Lgals1 基因按 timepoint 的小提琴图（含全体细胞与表达>0两版）与汇总表
+
+# 基因与数据
+gene: "Lgals1"
+rds_path: "1_Files/RDS/nk.v5.rds"
+
+# 时间点元数据列与顺序
+timepoint_col: "timepoint"
+timepoint_order:
+  - "0W_NCD"
+  - "1W_MCD"
+  - "2W_MCD"
+  - "6W_MCD"
+
+# 表达阈值（用于“表达>0”视图与统计）
+expr_threshold: 0.0
+
+# 输出目录（相对项目根目录）
+outputs:
+  base_dir: "3_Analysis/2_TimepointAnalysis/2_SpecificGeneVariation"
+  plots_dir: "3_Analysis/2_TimepointAnalysis/2_SpecificGeneVariation/results/plots/Violin"
+  tables_dir: "3_Analysis/2_TimepointAnalysis/2_SpecificGeneVariation/results/tables"
+  log_dir: "3_Analysis/2_TimepointAnalysis/2_SpecificGeneVariation/logs"
