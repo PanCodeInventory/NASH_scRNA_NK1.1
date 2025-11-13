@@ -10,7 +10,7 @@
 ### 实现步骤
 1. **步骤1**: 加载数据和基因集
    - 输入: 
-     - `1_Files/RDS/nk.integrated.v4.rds` (Seurat 对象)
+     - `1_Files/RDS/nk.v5.rds` (Seurat 对象)
      - `3_Analysis/6_GeneSetAnalysis/geneset.txt` (基因集文件)
    - 输出: 加载到 R 环境中的 Seurat 对象和基因集列表
    - 工具/方法: R, `Seurat`, `readr`
@@ -23,7 +23,7 @@
 
 3. **步骤3**: 可视化与结果导出
    - 输入: 包含模块得分的 Seurat 对象
-   - 操作: 针对每个基因集得分，绘制按细胞簇分组的小提琴图
+   - 操作: 针对每个基因集得分，绘制按细胞簇分组的小提琴图（不显示细胞点）
    - 输出: 
      - `results/plots/` 目录下每个基因集的小提琴图 (e.g., `vlnplot_iNK_Markers.png`)
      - `results/tables/` 目录下包含各细胞得分的表格 (可选)

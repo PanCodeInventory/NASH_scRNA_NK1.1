@@ -7,7 +7,7 @@ library(dplyr)
 library(stringr)
 
 # 2. Define file paths
-rds_file <- "1_Files/RDS/nk.integrated.v4.rds"
+rds_file <- "1_Files/RDS/nk.v5.rds"
 gene_set_file <- "3_Analysis/6_GeneSetAnalysis/geneset.txt"
 output_plot_dir <- "3_Analysis/6_GeneSetAnalysis/results/plots/"
 
@@ -78,7 +78,7 @@ for (set_name in names(gene_sets)) {
     object = seurat_obj,
     features = score_col,
     group.by = "seurat_clusters", # Assuming clusters are stored here
-    pt.size = 0.1
+    pt.size = 0
   ) + 
   labs(title = paste("Expression of", set_name), y = "Module Score") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))

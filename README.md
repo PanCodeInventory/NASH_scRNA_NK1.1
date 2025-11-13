@@ -66,6 +66,19 @@ scRNA-seq/
 ## 技术栈
 - R、Seurat、SingleCellExperiment、scDblFinder、SingleR、celldex、scater、UCell、ggplot2、patchwork
 
+## 时间点分析 - 特定基因（Lgals1）
+本次新增模块用于展示 Lgals1 在不同时间点（0W_NCD、1W_MCD、2W_MCD、6W_MCD）的表达分布：
+- 模块路径：`3_Analysis/2_TimepointAnalysis/2_SpecificGeneVariation/`
+- 脚本与配置：
+  - `scripts/plot_specific_gene_variation.R`
+  - `scripts/config.yaml`
+- 主要输出：
+  - 小提琴图（全体细胞）：`results/plots/Violin/Violin_Lgals1_byTimepoint_allcells.(png|svg)`
+  - 小提琴图（表达>0）：`results/plots/Violin/Violin_Lgals1_byTimepoint_expr_gt0.(png|svg)`
+  - 汇总表：`results/tables/Lgals1_byTimepoint_summary.csv`
+- 说明文档：`reports/guidedoc.md`、`reports/process.md`、`reports/summary.md`
+
+
 ## 更新
 
 - 2025-10-20
@@ -144,3 +157,13 @@ scRNA-seq/
   - 产出：
     - `3_Analysis/6_GeneSetAnalysis/results/plots/` 目录下每个基因集的小提琴图。
     - 完整的项目管理文档（`guidedoc.md`, `process.md`, `summary.md`）。
+
+- 2025-11-13（时间点特定基因表达分布）
+  - 新增模块：`3_Analysis/2_TimepointAnalysis/2_SpecificGeneVariation/`
+  - 目标：展示 Lgals1 在不同时间点的表达分布（小提琴图两版：包含所有细胞、仅表达>0的细胞），并输出汇总统计表。
+  - 脚本与配置：`scripts/plot_specific_gene_variation.R`、`scripts/config.yaml`
+  - 产出：
+    - `results/plots/Violin/Violin_Lgals1_byTimepoint_allcells.(png|svg)`
+    - `results/plots/Violin/Violin_Lgals1_byTimepoint_expr_gt0.(png|svg)`
+    - `results/tables/Lgals1_byTimepoint_summary.csv`
+  - 文档：`reports/guidedoc.md`、`reports/process.md`（含样式更新记录：叠加黑色小点）`reports/summary.md`
