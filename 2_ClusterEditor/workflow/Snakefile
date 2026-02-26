@@ -1,0 +1,109 @@
+import os
+import sys
+
+# 设置默认配置文件路径
+# 如果用户没有通过 --configfile 指定，则使用默认路径
+DEFAULT_CONFIG_PATH = "config/workflow_config.yaml"
+
+if not config:
+    # 尝试加载默认配置文件
+    if os.path.exists(DEFAULT_CONFIG_PATH):
+        configfile: DEFAULT_CONFIG_PATH
+    else:
+        # 如果找不到默认文件，尝试在上一级目录找（兼容不同运行目录）
+        alt_path = os.path.join("..", DEFAULT_CONFIG_PATH)
+        if os.path.exists(alt_path):
+            configfile: alt_path
+
+# 再次检查配置是否加载成功，并验证关键键值
+if "reprocess" not in config:
+    # 如果 config 为空或者缺少 reprocess，可能是加载失败
+    # 尝试手动加载 yaml 来调试 (Snakemake 应该会自动处理，但为了保险)
+    import yaml
+    try:
+        with open(DEFAULT_CONFIG_PATH, 'r') as f:
+            loaded_config = yaml.safe_load(f)
+            config.update(loaded_config)
+    except FileNotFoundError:
+        sys.exit(f"Error: Configuration file not found at {DEFAULT_CONFIG_PATH}. Please specify with --configfile.")
+
+if "reprocess" not in config:
+    sys.exit("Error: 'reprocess' section missing in configuration. Please check your config file.")
+
+# 获取绝对路径，确保在不同目录下运行脚本时能找到配置文件
+config_path_abs = os.path.abspath(DEFAULT_CONFIG_PATH)
+
+# 定义所有规则的目标文件
+rule all:
+    input:
+        config["reprocess"]["output_h5ad"]
+
+# 规则：检查环境
+# 在执行任何其他规则之前运行，确保依赖满足要求
+rule check_env:
+    output:
+        touch("logs/env_checked.flag")
+    shell:
+        """
+        python workflow/scripts/00_check_env.py
+        """
+
+# 规则：修剪簇
+rule prune_clusters:
+    input:
+        h5ad = config["prune"]["input_h5ad"],
+        env_check = "logs/env_checked.flag"  # 依赖环境检查
+    output:
+        h5ad = config["prune"]["output"]["pruned_h5ad"]
+    params:
+        config_path = config_path_abs,
+        section = "prune"
+    log:
+        "logs/prune_clusters.log"
+    shell:
+        """
+        python workflow/scripts/01_prune_clusters.py \
+            --config {params.config_path} \
+            --section {params.section} \
+            > {log} 2>&1
+        """
+
+# 规则：重命名簇
+rule rename_clusters:
+    input:
+        h5ad = config["rename"]["input_h5ad"],
+        env_check = "logs/env_checked.flag"  # 依赖环境检查
+    output:
+        h5ad = config["rename"]["output_h5ad"]
+    params:
+        config_path = config_path_abs,
+        section = "rename"
+    log:
+        "logs/rename_clusters.log"
+    shell:
+        """
+        python workflow/scripts/02_rename_clusters.py \
+            --config {params.config_path} \
+            --section {params.section} \
+            > {log} 2>&1
+        """
+
+# 规则：重新降维聚类 (Reprocess)
+rule reprocess_clusters:
+    input:
+        h5ad = config["reprocess"]["input_h5ad"],
+        env_check = "logs/env_checked.flag"
+    output:
+        h5ad = config["reprocess"]["output_h5ad"]
+    params:
+        config_path = config_path_abs,
+        section = "reprocess"
+    log:
+        "logs/reprocess_clusters.log"
+    shell:
+        """
+        python workflow/scripts/03_reprocess_clusters.py \
+            --config {params.config_path} \
+            --section {params.section} \
+            > {log} 2>&1
+        """

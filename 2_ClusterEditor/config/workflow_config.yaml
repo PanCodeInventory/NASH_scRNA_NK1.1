@@ -1,0 +1,88 @@
+prune:
+  # 输入文件路径 (支持绝对路径或相对路径)
+  input_h5ad: "../1_Matrix2Markers/results/data/merged/merged.processed.h5ad"
+  
+  # 输出配置 (支持绝对路径)
+  output:
+    pruned_h5ad: "results/pruned/merged.processed.pruned.h5ad"
+  
+  # 聚类列名（用于筛选要删除的簇）
+  cluster_column: "leiden"
+  
+  # 要删除的簇列表
+  clusters_to_remove: ["5", "6", "7", "8", "9", "10", "11"]
+  
+  # 绘图配置
+  plots:
+    do_umap_after_prune: true
+    umap_color_by: ["leiden"]
+  
+  # 其他选项
+  options:
+    save_cell_counts_table: true
+    save_before_after_summary: true
+
+rename:
+  # 输入文件路径 (默认接上一步的输出，如需独立运行可修改此路径)
+  input_h5ad: "results/pruned/merged.processed.pruned.h5ad"
+  
+  # 输出文件路径 (支持绝对路径)
+  output_h5ad: "results/renamed/merged.processed.pruned.renamed.h5ad"
+  
+  # 原始聚类列名
+  cluster_column: "leiden"
+  
+  # 新的注释列名
+  new_column: "cluster_annot"
+  
+  # 簇映射字典 (支持多对一合并)
+  # 格式: "原始簇ID": "新名称"
+  cluster_mapping:
+    "0": "Cytotoxic NK"
+    "1": "ILC1"
+    "2": "Circulating NK"
+    "3": "High-Ribosomal NK"
+    "4": "Homeostatic NK"
+  
+  # 簇合并规则 (可选，优先级高于 cluster_mapping)
+  # 格式: "新名称": [原始ID1, 原始ID2, ...]
+  merge_rules: {}
+
+  # 选项
+  options:
+    keep_original_column: true   # 是否保留原列
+    error_if_unmapped: true      # 如果有簇未在 mapping 中定义，是否报错
+    default_label_for_unmapped: "Unknown" # error_if_unmapped=false 时的默认值
+  
+  # 绘图配置
+  plots:
+    do_umap: true
+    umap_color_by: "cluster_annot"
+    # 支持绝对路径
+    umap_output: "results/plots/umap_by_cluster_annot.png"
+
+reprocess:
+  # 输入文件路径 (默认接上一步的输出)
+  input_h5ad: "results/renamed/merged.processed.pruned.renamed.h5ad"
+  
+  # 输出文件路径
+  output_h5ad: "results/reprocessed/merged.processed.pruned.renamed.reprocessed.h5ad"
+  
+  # 重新处理参数
+  n_top_genes: 2000
+  target_sum: 10000.0
+  scale_max_value: 10.0
+  n_neighbors: 10
+  
+  # 基因过滤模式 (用于剔除线粒体、核糖体等基因不参与PCA)
+  gene_patterns:
+    mt: "^MT-"
+    rp: "^RP[SL]"
+    ncrna: "^[A-Z][A-Z][0-9].*\\.[0-9]"
+    linc: "(^LOC|LINC)[1-9]*"
+  
+  # 绘图配置
+  plots:
+    do_umap: true
+    umap_color_by: ["cluster_annot"] # 按重命名后的标签着色，但使用新的UMAP坐标
+    umap_output_dir: "results/plots/reprocess"

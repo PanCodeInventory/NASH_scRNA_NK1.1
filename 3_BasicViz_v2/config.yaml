@@ -1,0 +1,98 @@
+input_h5ad: "../2_ClusterEditor/results/renamed/merged.processed.pruned.renamed.h5ad"
+output_dir: "results"
+
+theme:
+  font_size: 14
+  font_family: "Arial"
+  aspect_ratio: 1
+
+plots:
+  - name: "umap_clusters"
+    type: "umap"
+    color_by: "cluster_annot"
+    title: "Cell Clusters"
+    palette: "elegant"
+    point_size: 0.5
+
+  - name: "umap_group"
+    type: "umap"
+    color_by: "cluster_annot"
+    facet_by: "time"
+    title: "Cell Clusters by Time"
+    palette: "elegant"
+    point_size: 0.5
+
+  - name: "composition_stack"
+    type: "proportion"
+    group_by: "time"
+    fill_by: "cluster_annot"
+    position: "fill"
+    title: "Cell Type Composition by Time"
+    palette: "elegant"
+
+  - name: "marker_expression"
+    type: "dotplot"
+    group_by: "cluster_annot"
+    title: "Marker Gene Expression"
+    
+  - name: "composition_river"
+    type: "river"
+    group_by: "time"
+    fill_by: "cluster_annot"
+    title: "Cell Type Composition Changes Over Time"
+
+# 标记基因定义 - 与 cluster_annot 列的值完全匹配
+dotplot:
+  markers:
+    Cytotoxic NK:
+      - Gzma
+      - Ccl5
+      - Tyrobp
+      - Nkg7
+      - Klf2
+      - Prf1
+      - Lgals1
+      - Fcer1g
+    ILC1:
+      - Cd7
+      - Xcl1
+      - Ltb
+      - Cxcr6
+      - Itga1
+      - Ly6e
+      - Tox
+      - Klrb1b
+    Circulating NK:
+      - Zeb2
+      - Dock2
+      - Elmo1
+      - Ptprc
+      - Itga4
+      - Fyn
+      - Zbtb20
+      - Malat1
+    High-Ribosomal NK:
+      - Rps26
+      - Rpl32
+      - Rps2
+      - Rpl41
+      - Rps8
+      - Rps7
+      - Rps18
+      - Rpl35
+    Homeostatic NK:
+      - Nkain2
+      - Il2rb
+      - Cd44
+      - Cdk8
+      - Gphn
+      - Il31ra
+      - Neat1
+      - H2-K1
+
+colors:
+  time:
+    "0W": "#1f77b4"
+    "1W": "#ff7f0e"
+    "2W": "#2ca02c"
+    "6W": "#d62728"

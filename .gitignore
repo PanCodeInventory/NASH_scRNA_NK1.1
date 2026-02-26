@@ -1,0 +1,42 @@
+# Data files
+*.h5ad
+*.h5
+*.rds
+*.RDS
+*.rdata
+*.RData
+
+# Output directories
+results/
+logs/
+.snakemake/
+
+# Raw data
+Files/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.ipynb_checkpoints/
+.conda/
+
+# R
+.Rhistory
+.Rdata
+.RData
+.Ruserdata
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Snakemake
+.snakemake/
+slurm-*.out

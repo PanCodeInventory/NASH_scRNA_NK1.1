@@ -1,0 +1,12 @@
+snakemake
+scanpy
+anndata
+pandas
+numpy
+scipy
+matplotlib
+seaborn
+scrublet
+harmonypy
+leidenalg
+scikit-misc
