@@ -1,0 +1,44 @@
+genesets:
+  - name: "ILC2-IL2RA"
+    positive: ["Il2ra", "Kit", "Il1r1"]
+    negative: []
+
+  - name: "NKbright-XCL1"
+    positive: ["Xcl1", "Igfbp4", "Gzmk", "Sell", "Tnfrsf11a"]
+    negative: []
+
+  - name: "Transitional NK-GZMK"
+    positive: ["Gzmk", "Cxcr4", "Itga6", "Pik3r1", "Pde4b"]
+    negative: []
+
+  - name: "Mature NKdim-FCGR3A"
+    positive: ["Fcgr3", "Cx3cr1", "Fgfbp2", "Gzmb", "Spon2"]
+    negative: ["Gzmk"]
+
+  - name: "Inflamed NKdim-IFIT1"
+    positive: ["Ifit1", "Oas3", "Ifi44l"]
+    negative: []
+
+  - name: "Terminal NKdim-CD160neg"
+    positive: ["Lilrb4a", "Zeb2", "Znf700", "Pcsk7", "Clec2d"]
+    negative: ["Cd160"]
+
+  - name: "Cycling NK"
+    positive: ["Mki67", "Tyms", "Stmn1"]
+    negative: []
+
+  - name: "Proliferation-Extended"
+    positive: ["Mki67", "Pcna", "Top2a", "Mcm2", "Mcm4", "Mcm5", "Mcm6", "Ccnb1", "Cdk1", "Aurkb", "Birc5", "Ube2c", "Tyms", "Stmn1", "Hmgb2", "Hist1h4c"]
+    negative: []
+
+  - name: "Memory-NK"
+    positive: ["Sell", "Il7r", "Cxcr3", "Tcf7", "Cd69", "Klrg1"]
+    negative: []
+
+  - name: "Immature-NK"
+    positive: ["Cd27", "Tcf7", "Lef1", "Sell", "Zbtb16", "Cxcr3"]
+    negative: []
+
+  - name: "Regulatory-NK"
+    positive: ["Il10", "Klrc1", "Tgfb1", "Il2ra", "Ctla4", "Pdcd1", "Havcr2", "Lag3", "Tigit"]
+    negative: []
