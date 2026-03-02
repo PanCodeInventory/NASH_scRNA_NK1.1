@@ -1,0 +1,6 @@
+signature	top_cluster	top_mean_z	bottom_cluster	bottom_mean_z	delta_top_bottom
+HALLMARK_BILE_ACID_METABOLISM	Homeostatic NK	0.3047	Circulating NK	-0.1969	0.5016
+HALLMARK_FATTY_ACID_METABOLISM	High-Ribosomal NK	0.7282	Homeostatic NK	-0.7703	1.4985
+HALLMARK_GLYCOLYSIS	High-Ribosomal NK	0.5436	Homeostatic NK	-0.3335	0.8771
+HALLMARK_OXIDATIVE_PHOSPHORYLATION	High-Ribosomal NK	0.984	Homeostatic NK	-1.2105	2.1945
+HALLMARK_XENOBIOTIC_METABOLISM	High-Ribosomal NK	0.1812	Circulating NK	-0.2752	0.4563

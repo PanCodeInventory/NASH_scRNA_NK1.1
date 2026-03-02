@@ -40,3 +40,8 @@ Thumbs.db
 # Snakemake
 .snakemake/
 slurm-*.out
+
+# Hallmark metabolic analysis results (large files)
+4_GenesetScore/geneset_scoring/hallmark_metabolic_cluster_annot_20260302/*.h5ad
+4_GenesetScore/geneset_scoring/hallmark_metabolic_cluster_annot_20260302/cell_scores.tsv.gz
+4_GenesetScore/geneset_scoring/hallmark_metabolic_cluster_annot_20260302/plots/
